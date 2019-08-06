@@ -1,22 +1,27 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+
 
 public class GetSaveOption : MonoBehaviour {
 
+    public Toggle saveToggle;
 
     public void getSaveOption(int value)
     {
         App app = Object.FindObjectOfType<App>();
-
-        if (value == 1)
+        if (saveToggle.isOn)
         {
             app.SetAutoSave(true);
         }
-        if (value == 0)
+        else
         {
             app.SetAutoSave(false);
+
+
         }
+     
     }
 
 	// Use this for initialization

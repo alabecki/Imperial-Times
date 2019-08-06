@@ -35,51 +35,37 @@ public class GetScenarioChoice : MonoBehaviour {
         }
         Debug.Log("nameA: " + scenarioNames[0]);
 
-
         string scenarioName = scenarioNames[choice];
-        Debug.Log("name: "  + scenarioName);
+        Debug.Log("Scenario Name: "  + scenarioName);
         string nationListPath = Application.dataPath +
             "/StreamingAssets/Scenarios/" + scenarioName + "/MajorNationsNames.json";
 
-        //string[] file = Directory.GetFiles(nationListPath, "*.json");
         FileStream stream = File.OpenRead(nationListPath);
 
         string listRaw = System.IO.File.ReadAllText(nationListPath);
-        //string listRaw = File.ReadAllText(stream.ToString());
 
-        var NationNames = Newtonsoft.Json.JsonConvert.DeserializeObject<NationNames>(listRaw);
-       
+        var NationNames = Newtonsoft.Json.JsonConvert.DeserializeObject<NationNames>(listRaw);   
         Populate(nationDropdown, NationNames.nations, true);
-     
-        
-
 
     }
+
     public void Populate(Dropdown dropdown, List<string> item_choices, bool flags)
     {
         dropdown.options.Clear();
-        foreach (string item in item_choices)
+        Debug.Log("Number of Major Nations in Scenario: " + item_choices.Count);
+        foreach (string text in item_choices)
         {
-           //Sprite temp = new Sprite();
-
+            //Sprite temp = new Sprite();
+            Debug.Log(text);
             dropdown.options.Add(new Dropdown.OptionData()
             {
-                text = item,
-                image = Resources.Load("Flags/" + item, typeof(Sprite)) as Sprite
-                //image = Resources.Load<Sprite>(nation) as Sprite,
+                text = text,        
+                image = Resources.Load("Flags/" + text, typeof(Sprite)) as Sprite
 
             });
 
             Sprite labelSprite = Resources.Load("Flags/" + item_choices[0], typeof(Sprite)) as Sprite;
-
-            Image image = dropdown.transform.Find("Caption Image").GetComponent<Image>();
-            //= labelSprite;
-            image.sprite = labelSprite;
-            //dropdown.GetComponentInChildren<Image>().sprite = labelSprite;
-          
             Canvas.ForceUpdateCanvases();
-           // LayoutRebuilder.ForceRebuildLayoutImmediate(dropdown.GetComponent<RectTransform>());
-            // Use this for initialization
         }
     }
 
