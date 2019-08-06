@@ -7,271 +7,211 @@ using UnityEngine;
 public class Diplomatic  {
 
 
-    private int aggressiveLevel;
-    private int realLoyality;
 
-    private int claimFactor = 3;
-    private int attitudeFactor = 3;
-
-
-    private List<int> HitList = new List<int>();
-    private List<int> BefriendList = new List<int>();
-
-
-    private void updateHitList(Nation player)
+        //-1 refuse and Insulted,  0 = refuse, 1 = accept, 2 = accepted and flattered
+        // Needs to be fixed!!!!!!!!!!!!!!
+    public MyEnum.diploIntrepretation respondToDealOffer(Nation player, Deal deal)
     {
-        List<WarClaim> claims = player.getWarClaims();
-        Dictionary<int, float> claimStrength = new Dictionary<int, float>();
-        foreach (WarClaim claim in claims)
+        App app = UnityEngine.Object.FindObjectOfType<App>();
+        int humanIndex = app.GetHumanIndex();
+        Nation human = State.getNations()[humanIndex];
+
+        int relation = player.Relations[humanIndex];
+
+        int playerMoneyOffer = deal.getPlayerMoneyOffer();
+        Debug.Log("Player Money Offer: " + playerMoneyOffer);
+        List<int> playerClaimOffers =  deal.getPlayerClaimOffers();
+        List<int> playerColonyOffers = deal.getPlayerColonyOffers();
+        List<int> playerSphereOffers = deal.getPlayerSphereOffers();
+        List<int> playerBoycottOffers = deal.getPlayerBoycottOffers();
+
+        float valueReceived = getSumOfDealValues(player, playerMoneyOffer, playerClaimOffers, playerColonyOffers, playerSphereOffers);
+
+        float boycottPart = evaulateBoycottItems(player, playerBoycottOffers, false);
+
+        valueReceived += boycottPart;
+
+
+        int aiMoneyOffer = deal.getAI_MoneyOffer();
+        List<int> aiClaimOffers = deal.getAI_ClaimOffers();
+        List<int> aiColonyOffers = deal.getAI_ColonyOffers();
+        List<int> aiSphereOffers = deal.getAI_SphereOffers();
+        List<int> aiBoycottOffers = deal.getAI_BoycottOffers();
+
+        float valueGiven = getSumOfDealValues(player, aiMoneyOffer, aiClaimOffers, aiColonyOffers, aiSphereOffers);
+
+        float boycottPartGiven = evaulateBoycottItems(player, aiBoycottOffers, true);
+
+        valueGiven += boycottPartGiven;
+
+        Debug.Log("Value Given: " + valueGiven);
+        Debug.Log("Value Reveived" + valueReceived);
+
+
+        //check if it is a gift
+        if (valueGiven == 0 && valueReceived > 2)
         {
-            if (!claimStrength.Keys.Contains(claim.getOtherNation())) {
-                claimStrength[claim.getOtherNation()] = 0;
-            }
+            player.adjustRelation(human, (int)(valueGiven * 2));
+
+            Debug.Log("Here");
+            return MyEnum.diploIntrepretation.gift;
         }
-        foreach (WarClaim claim in claims)
+
+        // check if it is a demand
+        if (valueReceived == 0 && valueGiven > 0)
         {
-            claimStrength[claim.getOtherNation()] += claim.getValue();
+            player.adjustRelation(human, -10);
+            Debug.Log("Here");
+            return MyEnum.diploIntrepretation.demand;
         }
-
-        float maxClaim = claimStrength.Values.ToList().Max();
-        float ratio = 100f / maxClaim;
-
-        Dictionary<int, float> relationFactor = new Dictionary<int, float>();
-        Dictionary<int, float> newHitList = new Dictionary<int, float>();
-
-        foreach (int key in claimStrength.Keys.ToList())
+        
+        // if relations are poor and we are offering anything at all 
+        if(relation < 28 && valueGiven > 0)
         {
-            Nation otherPlayer = State.getNations()[key];
-            //First - assign to each player the sum of the strength of all your war claims
-            //(normalized and weighted)- this 
-            //represents how much you stand to gain from conflict with this player
-            newHitList[key] = claimStrength[key] * ratio * claimFactor;
-            //now - subtract your current relations (divided by x, depending on Loyality)
-
-            if (player.getAI().GetTopLevel().GetLoyality() == MyEnum.Loyality.low)
-            {
-                newHitList[key] = newHitList[key] - (player.getRelationFromThisPlayer(key).getAttitude() / 160);
-
-            }
-            if (player.getAI().GetTopLevel().GetLoyality() == MyEnum.Loyality.medium)
-            {
-                newHitList[key] = newHitList[key] - (player.getRelationFromThisPlayer(key).getAttitude() / 80);
-
-            }
-            if (player.getAI().GetTopLevel().GetLoyality() == MyEnum.Loyality.medium)
-            {
-                newHitList[key] = newHitList[key] - (player.getRelationFromThisPlayer(key).getAttitude() / 40);
-
-            }
-            //Modify by difference in military rank
-            newHitList[key] = newHitList[key] +
-                (State.history.getMilitaryRanking(player.getIndex() - State.history.getMilitaryRanking(key))) / 7;
-            newHitList[key] = newHitList[key] - otherPlayer.Reputation / 100;
+            Debug.Log("Here");
+            return MyEnum.diploIntrepretation.badDeal;
         }
-        var ordered = newHitList.OrderByDescending(x => x.Value);
-        int index = 0;
-        foreach (var item in ordered)
+
+        // relations are normal and value given is not much better than value received
+        if (valueGiven >= valueReceived * 1.1 && relation < 72)
         {
-            this.HitList[index] = item.Key;
-            index++;
+            Debug.Log("Here");
+            return MyEnum.diploIntrepretation.badDeal;
         }
+
+        // if AI is giving more than it receives
+        if(valueGiven > valueReceived)
+        {
+            Debug.Log("Here");
+            return MyEnum.diploIntrepretation.badDeal;
+        }
+        Debug.Log("Here");
+
+        return MyEnum.diploIntrepretation.goodDeal;
     }
 
 
-
-    public void updateBefriendList(Nation player)
+    private float getColonySphereValue(Nation player, int minorIndex)
     {
-        Dictionary<int, float> newBefriendList = new Dictionary<int, float>();
+        AI ai = player.getAI();
 
-        foreach (KeyValuePair<int, Nation> nation in State.getNations())
+        float value = 0;
+        Nation item = State.getNations()[minorIndex];
+        Debug.Log("Item: " + item.getName());
+        foreach(int index in player.getProvinces())
         {
-            if (player.getAI().GetTopLevel().GetLoyality() == MyEnum.Loyality.low)
-            {
-                newBefriendList[nation.Key] =
-                    player.getRelationToThisPlayer(nation.Value.getIndex()).getAttitude() * 1.5f;
-            }
-            if (player.getAI().GetTopLevel().GetLoyality() == MyEnum.Loyality.medium)
-            {
-                newBefriendList[nation.Key] =
-                    player.getRelationToThisPlayer(nation.Value.getIndex()).getAttitude() * 2.5f;
-            }
-            if (player.getAI().GetTopLevel().GetLoyality() == MyEnum.Loyality.medium)
-            {
-                newBefriendList[nation.Key] =
-                    player.getRelationToThisPlayer(nation.Value.getIndex()).getAttitude() * 5f;
-            }
+            Province prov = State.getProvince(index);
+            MyEnum.Resources res = prov.getResource();
+            value +=  player.getAI().GetTopLevel().getResPriority(player, res);
         }
-        for (int i = 0; i < this.HitList.Count; i++)
+        Debug.Log("Sphere/Colony Value: " + value);
+        HashSet<int> preferredSpheres = ai.SpherePreferences;
+        if (preferredSpheres.Contains(minorIndex))
         {
-            if(i > 4)
-            {
-                break;
-            }
-            newBefriendList[HitList[i]] -= ((5 - i) / 2.5f);
+            value += 1;
         }
-        foreach (KeyValuePair<int, float> item in newBefriendList)
-        {
-            Nation otherPlayer = State.getNations()[item.Key];
-
-            newBefriendList[item.Key] -= ((100 - otherPlayer.getReliability()) * 0.02f);
-            newBefriendList[item.Key] += ((3.5f - State.history.getMilitaryRanking(item.Key)) / 2);
-        }
-        var ordered = newBefriendList.OrderByDescending(x => x.Value);
-        int index = 0;
-        foreach (var item in ordered)
-        {
-            this.BefriendList[index] = item.Key;
-            index++;
-        }
-
-
-
+        return value;
     }
 
-    public List<int> getHitlist()
+    private float getSumOfDealValues(Nation player, int gold,  List<int> claims, List<int> colonies, List<int> spheres)
     {
-        return this.HitList;
-    }
-
-    public List<int> getBefrientList()
-    {
-        return this.BefriendList;
-    }
-
-    public string responceToAllianceRequest(Nation Humanplayer, int AIIndex)
-    {
-        Debug.Log("Checking...");
-        string response = " ";
-        Relation relationTo = Humanplayer.getRelationToThisPlayer(AIIndex);
-        Relation relationFrom = Humanplayer.getRelationFromThisPlayer(AIIndex);
-        Nation otherNation = State.getNations()[AIIndex];
-        int numMajors = getNumberOfMajorsNations();
-
-        if (relationTo.isDefensiveAlliance() == false && relationTo.isFullAlliance() == false)
+        float value = 0;
+        for(int i = 0; i < colonies.Count; i++)
         {
-            Debug.Log("Checking...");
+            float add = getColonySphereValue(player, colonies[i]) * 1.5f;
+            value += add;
+        }
 
-            response = "Splendid! We've been contemplating just such an alliance ourselves, but we were too shy to ask" +
-                "We pledge to come to the aid of our brothers in sisters in " + Humanplayer.getNationName() +
-            "against aggressive powers and trust that they will" +
-            "do the same for us!";
-            //Must check if other player can have another defensive allisnce
-            if (currentNumberOfDefenseiveAlliances(otherNation) > (numMajors - 1) / 2)
+        for (int i = 0; i < spheres.Count; i++)
+        {
+            float add = getColonySphereValue(player, spheres[i]);
+            value += add;
+        }
+
+        for(int i = 0; i < claims.Count; i++)
+        {
+            int provIndex = claims[i];
+            Province prov = State.getProvinces()[provIndex];
+            MyEnum.Resources res = prov.getResource();
+            value += player.getAI().GetTopLevel().getResPriority(player, res);
+        }
+
+  
+        int turn = State.turn;
+        value += gold * 0.05f;
+        //Debug.Log("Total Value of Offer: " + value);
+        return value;
+    }
+
+
+    private float evaulateBoycottItems(Nation player, List<int> boycotts, bool offer)
+    {
+        float value = 0;
+        // the AI would be making the Boyoctt
+        if(offer == true)
+        {
+            foreach(int item in boycotts)
             {
-                Debug.Log("Checking...");
-
-                response = "We are afraid that we are already " +
-                    "engaged in enough alliances at this time.  ";
-            }
-            Debug.Log("Checking...");
-            // int othersTarget = -1;
-            if (otherNation.getAI().GetDiplomatic().getHitlist().Count > 0)
-            {
-                int othersTarget = otherNation.getAI().GetDiplomatic().getHitlist()[0];
-
-                if (othersTarget == Humanplayer.getIndex())
+                //Nation nation = State.getNations()[item];
+                int relation = player.Relations[item];
+                if(relation < 20)
                 {
-                    Debug.Log("Checking...");
-
-                    response = "We regret to inform you that it is not " +
-                    "in our best interest to form such an alliance at this time.";
+                    value += 0.1f;
                 }
-
-
-                if (checkIfAlliedWith(Humanplayer, othersTarget))
+                else if(relation < 30)
                 {
-                    Debug.Log("Checking...");
-
-                    string targetName = State.getNations()[othersTarget].getNationName();
-                    response = "Unfortunately, your alliance with " + targetName +
-                       " makes it impossible to entertain an alliance with you " +
-                        "at this time.";
+                    value += 0.5f;
+                }
+                else if(relation < 40)
+                {
+                    value += 1;
+                }
+                else if(relation < 50)
+                {
+                    value += 2;
+                }
+                else if(relation < 60)
+                {
+                    value += 3;
+                }
+                else if(relation < 70)
+                {
+                    value += 4;
+                }
+                else
+                {
+                    value += 8;
                 }
             }
-            if (Humanplayer.getReliability() < 35)
-            {
-                Debug.Log("Checking...");
-
-                response = "We would be foolish to join an alliance with " +
-                    "a petulant coward such as yourself yourself!";
-            }
-            if (checkIfReallyWantToBefriend(otherNation, Humanplayer.getIndex()) == false)
-            {
-                Debug.Log("Checking...");
-
-                response = "Don't take this personally " +
-                    "but we just don't really like you enough " +
-                    "to make this sort of commitment. Let's just stay friends. Yeah... friends.";
-            }
-            Debug.Log("Checking...");
-
-            return response;
         }
-        if (relationTo.isDefensiveAlliance() == true)
+        if (offer == false)
         {
-            //Must check if other player wants to upgrade to full alliance
-            //Cannot have full alliance with more than 50% of other players
-            return response;
+            foreach (int item in boycotts)
+            {
+                int relation = player.Relations[item];
+                if (relation < 20)
+                {
+                    value += 2;
+                }
+                else if (relation < 30)
+                {
+                    value += 1f;
+                }
+                else if (relation < 40)
+                {
+                    value += 0.5f;
+                }
+                else if (relation < 50)
+                {
+                    value += 0.25f;
+                }
+
+            }
         }
-        return "Something went wrong";
+        return value;
     }
 
-    private bool checkIfReallyWantToBefriend(Nation player, int self)
-    {
-        int numMajors = getNumberOfMajorsNations();
-        bool result = false;
-        List<int> BefriendList = player.getAI().GetDiplomatic().getBefrientList();
-        for (int i = 0; i < BefriendList.Count; i++)
-        {
-            if (i > (numMajors / 2) + 1)
-            {
-                return result;
-            }
-            if (BefriendList[i] == self)
-            {
-                result = true;
-            }
-        }
-        return result;
-    }
-
-    private bool checkIfAlliedWith(Nation player, int other)
-    {
-        bool result = false;
-        if (player.getRelations()[other].isDefensiveAlliance() ||
-            player.getRelations()[other].isFullAlliance())
-        {
-            result = true;
-        }
-        return result;
-    }
-
-    private int getNumberOfMajorsNations()
-    {
-        int majorCount = 0;
-        foreach (Nation nation in State.getNations().Values)
-        {
-            if (nation.getType() == MyEnum.NationType.major)
-            {
-                majorCount += 1;
-            }
-        }
-        return majorCount;
-    }
-
-    private int currentNumberOfDefenseiveAlliances(Nation nation)
-    {
-        int allianceCount = 0;
-        foreach (Relation relation in nation.getRelations().Values)
-        {
-            if (relation.isDefensiveAlliance())
-            {
-                allianceCount += 1;
-            }
-        }
-        return allianceCount;
-    }
-
+    
 
 
 
