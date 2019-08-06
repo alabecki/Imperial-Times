@@ -13,7 +13,6 @@ public class selectGoodResButton : MonoBehaviour
 
     public Image itemImage;
     public Text numberItemBid;
-    public DD_DataDiagram dataDiagram;
     public Button plus;
     public Button minus;
    public Toggle offer;
@@ -28,7 +27,7 @@ public class selectGoodResButton : MonoBehaviour
     public Text offeredLastTurn;
     public Text soldLastTurn;
 
-    public List<float> priceHistory;
+    public float[] priceHistory;
 
     HashSet<string> ress = new HashSet<string>();
 
@@ -59,11 +58,12 @@ public class selectGoodResButton : MonoBehaviour
         Market market = State.market;
         MarketHelper.currentItem = SelectionButton.transform.parent.parent.name.ToString();
         string currentItem = SelectionButton.transform.parent.parent.name.ToString();
-        Debug.Log("Grandparent name: " + currentItem);
+       // Debug.Log("Grandparent name: " + currentItem);
         if (ress.Contains(currentItem))
         {
             itemImage.sprite = Resources.Load<Sprite>("Resource/" + currentItem) as Sprite;
             MyEnum.Resources _item = (MyEnum.Resources)Enum.Parse(typeof(MyEnum.Resources), currentItem);
+         //   Debug.Log(_item);
             numOffBid.text = MarketHelper.ResourceOfferBidAmount[_item].ToString();
 
             if (State.turn > 1)
@@ -76,10 +76,10 @@ public class selectGoodResButton : MonoBehaviour
                 offeredLastTurn.text = "Offered Last Turn: 0";
                 soldLastTurn.text = "Sold Last Turn: 0";
             }
-            Debug.Log(_item);
-            Debug.Log(MarketHelper.ResourceOfferBid[_item]);
-            priceHistory = market.getResourcePriceHistory(_item);
-            if (MarketHelper.ResourceOfferBid[_item] == MyEnum.marketChoice.pass)
+         //   Debug.Log(_item);
+          //  Debug.Log(MarketHelper.getResoueceOfferBid(_item));
+        //    priceHistory = market.getResourcePriceHistory(_item);
+            if (MarketHelper.getResoueceOfferBid(_item) == MyEnum.marketChoice.pass)
             {
                 Debug.Log("Pass");
                 pass.isOn = true;
@@ -92,7 +92,7 @@ public class selectGoodResButton : MonoBehaviour
                 minus.interactable = false;
             }
 
-            else if (MarketHelper.ResourceOfferBid[_item] == MyEnum.marketChoice.bid)
+            else if (MarketHelper.getResoueceOfferBid(_item) == MyEnum.marketChoice.bid)
             {
                 Debug.Log("Bid");
 
@@ -132,7 +132,7 @@ public class selectGoodResButton : MonoBehaviour
                 pass.isOn = false;
                 bid.isOn = false;
                 Debug.Log("Offer");
-                MarketHelper.ResourceOfferBid[_item] = MyEnum.marketChoice.bid;
+                MarketHelper.setResoueceOfferBid(_item, MyEnum.marketChoice.bid);
                 if (player.getNumberResource(_item) - MarketHelper.ResourceOfferBidAmount[_item] < 1)
                 {
                     plus.interactable = false;
@@ -160,7 +160,7 @@ public class selectGoodResButton : MonoBehaviour
             {
                 offeredLastTurn.text = "Offered Last Turn: " + market.getNumberGoodsOffered(_item).ToString();
                 soldLastTurn.text = "Sold Last Turn: " + market.getNumberOfGoodsSoldLastTurn(_item).ToString();
-                priceHistory = market.getGoodPriceHistory(_item);
+             //   priceHistory = market.getGoodPriceHistory(_item);
 
             }
             else
@@ -168,8 +168,8 @@ public class selectGoodResButton : MonoBehaviour
                 offeredLastTurn.text = "Offered Last Turn: 0";
                 soldLastTurn.text = "Sold Last Turn: 0";
             }
-            priceHistory = market.getGoodPriceHistory(_item);
-            if (MarketHelper.GoodsOfferBid[_item] == MyEnum.marketChoice.pass)
+           // priceHistory = market.getGoodPriceHistory(_item);
+            if (MarketHelper.getGoodOfferBid(_item) == MyEnum.marketChoice.pass)
             {
                 pass.isOn = true;
                 plus.interactable = false;
@@ -180,7 +180,7 @@ public class selectGoodResButton : MonoBehaviour
             }
 
 
-            else if (MarketHelper.GoodsOfferBid[_item] == MyEnum.marketChoice.bid)
+            else if (MarketHelper.getGoodOfferBid(_item) == MyEnum.marketChoice.bid)
             {
                 int turn = State.turn;
                 float cost = 3;
@@ -212,7 +212,7 @@ public class selectGoodResButton : MonoBehaviour
             else
             {
                 offer.isOn = true;
-                MarketHelper.GoodsOfferBid[_item] = MyEnum.marketChoice.bid;
+                MarketHelper.setGoodOfferBid(_item, MyEnum.marketChoice.bid);
                 if (player.getNumberGood(_item) - MarketHelper.GoodsOfferBidAmount[_item] < 1)
                 {
                     plus.interactable = false;

@@ -16,7 +16,7 @@ public class TechSelectButton : MonoBehaviour {
     public Text DiscoveredBy;
     public Image TechImage;
     public Button ResearchButton;
-    public Text PressToResearch;
+   // public Text PressToResearch;
     public Text techDescriptionText;
     public Text HiddenName;
 
@@ -45,16 +45,15 @@ public class TechSelectButton : MonoBehaviour {
         Technology tech = State.GetTechnologies()[techName];
         TechName.text = realName;
         HiddenName.text = tech.GetTechName();
-        TechCost.text = "Cost: " + tech.GetCost().ToString();
         TechPrestige.text = "Prestige: " + tech.GetPrestige().ToString();
         Payment.text = "Payment: " + tech.GetPayment().ToString();
+        TechCost.text = "Cost: " + tech.GetCost().ToString();
 
-       
+
 
         if (tech.GetDiscovered())
         {
             Nation discoverer = State.getNations()[tech.GetDiscoveredBy()];
-
             DiscoveredBy.text = discoverer.getName();
         }
         else
@@ -63,69 +62,38 @@ public class TechSelectButton : MonoBehaviour {
         }
 
         string description = tech.GetDescription()[0] + Environment.NewLine + tech.GetDescription()[1]
-            + Environment.NewLine + "Requirements ";
+            + Environment.NewLine + "Requirements: " + Environment.NewLine;
 
         foreach (string item in tech.GetPreRequisites())
         {
             description = description + item + ",";
         }
+        description = description + Environment.NewLine;
         description = description.Remove(description.Length - 1);
 
         techDescriptionText.text = description;
 
         TechImage.sprite = Resources.Load<Sprite>("TechImages/" + techName);
-        if (CheckIfTechCanBeResearched(tech))
+        if(PlayerCalculator.hasTechPreRequisites(player, techName)  && PlayerCalculator.canAffordTech(player, techName))
         {
             ResearchButton.interactable = true;
-            PressToResearch.text = "Press to \n Research";
-
+      //      PressToResearch.text = "Press to \n Research";
         }
+   
         else if(player.GetTechnologies().Contains(techName))
         {
             ResearchButton.interactable = false;
-            PressToResearch.text = "Already \n researched";
+        //    PressToResearch.text = "Already \n researched";
         }
         else
         {
             Debug.Log("Cannot be researched");
 
             ResearchButton.interactable = false;
-            PressToResearch.text = "Cannot \n research";
+          //  PressToResearch.text = "Cannot \n research";
         }
     }
 
-    public bool CheckIfTechCanBeResearched(Technology tech)
-    {
-        App app = UnityEngine.Object.FindObjectOfType<App>();
-        Nation player = State.getNations()[app.GetHumanIndex()];
-        float researchPoints = player.Research;
-        int cost = tech.GetCost();
-        if (tech.GetDiscovered())
-        {
-            cost = cost / 2;
-        }
-        if (researchPoints < tech.GetCost())
-        {
-            return false;
-        }
-        if (player.GetTechnologies().Contains(tech.GetTechName()))
-        {
-            return false;
-        }
-        foreach(string requirement in tech.GetPreRequisites())
-        {
-            if (!player.GetTechnologies().Contains(requirement))
-            {
-                return false;
-            }
-        }
-        if(tech.GetDiscovered() && player.getGold() < tech.GetPayment())
-        {
-            return false;
-        }
-        ResearchButton.interactable = true;
-        return true;
-    }
 
 }
 

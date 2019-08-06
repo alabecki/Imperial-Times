@@ -49,8 +49,8 @@ public class empirePanel : MonoBehaviour {
         Market market = State.market;
         provinceTable.ClearRows();
         int turn = State.turn;
-        Debug.Log("Num provinces: " + player.getAllProvinceIndexes().Count);
-        foreach (int provIndex in player.getAllProvinceIndexes())
+        Debug.Log("Num provinces: " + player.getProvinces().Count);
+        foreach (int provIndex in player.getProvinces())
         {
             Province prov = State.getProvinces()[provIndex];
             TableRow newRow = Instantiate<TableRow>(provRow);
@@ -67,9 +67,9 @@ public class empirePanel : MonoBehaviour {
             resImg.preserveAspect = true;
             resImg.sprite = Resources.Load("Resource/" + prov.getResource().ToString(), typeof(Sprite)) as Sprite;
             newRow.Cells[2].GetComponentInChildren<Text>().text = prov.getDevelopmentLevel().ToString();
-            newRow.Cells[3].GetComponentInChildren<Text>().text = prov.getInfrastructure().ToString();
+           // newRow.Cells[3].GetComponentInChildren<Text>().text = prov.getInfrastructure().ToString();
             newRow.Cells[4].GetComponentInChildren<Text>().text = prov.getProduction().ToString("0.0");
-            newRow.Cells[5].GetComponentInChildren<Text>().text = prov.getPOP().ToString();
+          //  newRow.Cells[5].GetComponentInChildren<Text>().text = prov.getPOP().ToString();
             newRow.Cells[6].GetComponentInChildren<Text>().text = prov.getFortLevel().ToString();
             newRow.Cells[7].GetComponentInChildren<Text>().text = prov.getCulture().ToString();
 

@@ -9,11 +9,9 @@ public class researchTechButton : MonoBehaviour {
 
     public Button research;
     public Text hiddenTechName;
+    public UI_Updater uI_updater;
     public Text researchPoints;
-    public Text numberPatents;
-
-    public Text AP;
-
+    public Text numberPattents;
 
     public GameObject techTreeConnector;
 
@@ -38,17 +36,18 @@ public class researchTechButton : MonoBehaviour {
         PlayerPayer.PayForTechnology(player, techName);
         PlayerReceiver.addNewTech(player, tech);
         PlayerReceiver.registerTechChanges(tech, player);
-        AP.text = player.getAP().ToString();
         tech.SetDiscovered(true);
         tech.SetDiscoveredBy(player.getIndex());
         research.interactable = false;
         researchPoints.text = player.Research.ToString();
-        numberPatents.text = player.getNumberPattents().ToString();
+        numberPattents.text = player.getNumberPattents().ToString();
          GameObject buttonOfResearchedTech = GetChildWithName.getChildWithName(techTreeConnector, tech.GetTechName());
         Image image = buttonOfResearchedTech.GetComponent<Image>();
-        image.sprite = Resources.Load("Textures/WoodenTexture", typeof(Sprite)) as Sprite;
+        image.sprite = Resources.Load("AlchemistUITools/SteamContent/Sprites/Buttons/QuadroBtnBg", typeof(Sprite)) as Sprite;
 
-
+        RectTransform imageTransform = image.rectTransform;
+        imageTransform.ForceUpdateRectTransforms();
+        uI_updater.updateUI();
 
     }
 
