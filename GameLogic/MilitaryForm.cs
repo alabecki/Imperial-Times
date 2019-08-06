@@ -15,9 +15,7 @@ public class MilitaryForm {
     public TankForm tank = new TankForm(1.0f, 3.0f, 2.0f, 0.075f, 0.1f, 3, 1.0f);
     public FighterForm fighter = new FighterForm(1.0f, 1.0f, 1.2f, 0.075f, 0.1f, 3, 3, 0.1f);
 
-    public FrigateForm frigate = new FrigateForm(1.0f, 1.0f, 0.6f, 0.1f, 0.0f, 2,  2, 0);
-    public IroncladForm ironclad = new IroncladForm(2.0f, 1.4f, 0.8f, 0.1f, 0.0f, 2, 3, 0);
-    public DreadnoughtForm dreadnought = new DreadnoughtForm(4.0f, 4.0f, 0.4f, 0.25f,0.2f, 6, 4, 0);
+
 
 
 
@@ -62,35 +60,11 @@ public class MilitaryForm {
         }
     }
         
-    public class FrigateForm : SeaUnit
-    {
-        public FrigateForm(float strength, float attack, float maneuver, float ammoUse, float oilUse, int capacity,
-            int movement, float experience)
-              :base(strength, attack, maneuver, ammoUse, oilUse, capacity, movement, experience)
-                {
-            attack = 1.0f;
-                }
-    }
 
-    public class IroncladForm : SeaUnit
-    {
-        public IroncladForm(float strength, float attack, float maneuver, float ammoUse, float oilUse, int capacity,
-            int movement, float experience)
-              : base(strength, attack, maneuver, ammoUse, oilUse, capacity, movement, experience)
-        {
-            attack = 1.4f;
-        }
-    }
 
-    public class DreadnoughtForm : SeaUnit
-    {
-        public DreadnoughtForm(float strength, float attack, float maneuver, float ammoUse, float oilUse, int capacity,
-             int movement, float experience)
-              : base(strength, attack, maneuver, ammoUse, oilUse, capacity, movement, experience)
-        {
-            attack = 4.0f;
-        }
-    }
+
+
+
 
     public class FighterForm : AirUnit
     {
@@ -141,10 +115,6 @@ public class MilitaryForm {
     {
         this.navyNumberCounter += 1;
     }
-
-
-
-
 
 
 }
